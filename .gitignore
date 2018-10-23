@@ -105,4 +105,4 @@ venv.bak/
 
 # Generated file
 torrents.json
-torrents.state
+*.state
