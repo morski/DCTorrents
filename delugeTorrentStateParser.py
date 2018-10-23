@@ -58,12 +58,13 @@ def parseTorrentStateFile(inputFileName):
 
 def compareStateJsonFiles(fileA, fileB):
     with open(fileA,'r') as f1, open(fileB,'r') as f2:
-        diff = difflib.ndiff(f1.readlines(),f2.readlines())    
+        diff = difflib.ndiff(f1.readlines(), f2.readlines())    
         for line in diff:
-            if line.startswith('-'):
-                sys.stdout.write(line)
-            elif line.startswith('+'):
-                sys.stdout.write('\t\t'+line)  
+            if line.startswith('-') or line.startswith('+'):
+                if "hash" in line:
+                    pos = line.find(":")
+                    hash = line[pos+3:-4]
+                    print(hash)
 
 def main(argv):
     inputFileName = []
@@ -96,10 +97,11 @@ def main(argv):
         saveTorrentDataToJson(torrents, outputFileName[1] if len(outputFileName) > 1 else outputFileName[0])
     
     if compareMode:
-        if len(outputFileName) < 3:
+        print(len(inputFileName))
+        if len(inputFileName) < 3:
             print("Filenames missing. Use two -i to define json files")
             sys.exit(2)
-        compareStateJsonFiles(outputFileName[1], outputFileName[2])
+        compareStateJsonFiles(inputFileName[1], inputFileName[2])
 
 if __name__ == "__main__":
    main(sys.argv[1:])
