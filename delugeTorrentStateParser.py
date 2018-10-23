@@ -10,7 +10,7 @@ class TorrentData(object):
     url = ""
 
 
-filepath = 'torrents.state.backup.22'  
+filepath = 'torrents.state'  
 with open(filepath) as fp:  
     line = fp.readline()
     cnt = 0
@@ -50,5 +50,5 @@ with open(filepath) as fp:
         for torrent in torrents:
             jsonTorrentsList.append(torrent.toJSON())
             outfile.write(torrent.toJSON() + ",\n")
-
+    	outfile.write(",".join(jsonTorrentsList))
         outfile.write("]\n")
