@@ -11,6 +11,11 @@ class TorrentData(object):
     path = ""
     url = ""
 
+def getUniqueUrls(torrentData):
+    urls = set(list(map(lambda x: x.url, torrentData)))
+    with open("announce.txt", 'w') as outfile:
+        outfile.write(";".join(urls))
+
 def saveJsonToFile(jsonData, outputfile):
     with open(outputfile, 'w') as outfile:
         json.dump(jsonData, outfile)
@@ -100,8 +105,9 @@ def main(argv):
     duplicate = False
     parseMode = True
     compareMode = False
+    announceMode = False
     try:
-        opts, args = getopt.getopt(argv,"hi:o:cdu",["help","ifile=","ofile=","comparemode","duplicate","url"])
+        opts, args = getopt.getopt(argv,"hi:o:cdua",["help","ifile=","ofile=","comparemode","duplicate","url","announce"])
     except getopt.GetoptError:
         print('test.py -h for more info')
         sys.exit(2)
@@ -118,10 +124,15 @@ def main(argv):
         elif opt in ("-c", "--comparemode"): 
             compareMode = True
             parseMode = False
+            announceMode = False
         elif opt in ("-d", "--duplicate"):
             duplicate = True
-        elif opt in ("-u" "--url"):
+        elif opt in ("-u","--url"):
             saveUrl = True
+        elif opt in ("-a", "--announce"):
+            announceMode = True
+            compareMode = False
+            parseMode = False
 
     if parseMode:
         torrents = parseTorrentStateFile(inputFileName[1] if len(inputFileName) > 1 else inputFileName[0], saveUrl)
@@ -132,6 +143,10 @@ def main(argv):
             print("Filenames missing. Use two -i to define json files")
             sys.exit(2)
         compareStateJsonFiles(inputFileName[1], inputFileName[2], outputFileName[1] if len(outputFileName) > 1 else outputFileName[0], duplicate)
+
+    if announceMode:
+        torrents = parseTorrentStateFile(inputFileName[1] if len(inputFileName) > 1 else inputFileName[0], True)
+        getUniqueUrls(torrents)
 
 if __name__ == "__main__":
    main(sys.argv[1:])
