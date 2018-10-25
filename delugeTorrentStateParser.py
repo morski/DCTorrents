@@ -11,17 +11,21 @@ class TorrentData(object):
     path = ""
     url = ""
 
+def saveJsonToFile(jsonData, outputfile):
+    with open(outputfile, 'w') as outfile:
+        json.dump(jsonData, outfile)
+
+def saveListAsJson(data, outputfile):
+    with open(outputfile, 'w') as outfile:
+        outfile.write("[\n")
+        outfile.write(",".join(data))
+        outfile.write("]\n")
 
 def saveTorrentDataToJson(torrentData, outputFile):
-    outputFile = sys.argv
-    with open('torrents.json', 'w') as outfile:
-        outfile.write("[\n")
-        jsonTorrentsList = []
-        for torrent in torrentData:
-            jsonTorrentsList.append(torrent.toJSON())
-            outfile.write(torrent.toJSON() + ",\n")
-    	outfile.write(",".join(jsonTorrentsList))
-        outfile.write("]\n")
+    jsonTorrentsList = []
+    for torrent in torrentData:
+        jsonTorrentsList.append(torrent.toJSON())
+    saveListAsJson(jsonTorrentsList, outputFile)
 
 def parseTorrentStateFile(inputFileName):
     with open(inputFileName) as stateFile:  
@@ -56,15 +60,35 @@ def parseTorrentStateFile(inputFileName):
             line = stateFile.readline()
         return torrents
 
-def compareStateJsonFiles(fileA, fileB):
-    with open(fileA,'r') as f1, open(fileB,'r') as f2:
-        diff = difflib.ndiff(f1.readlines(), f2.readlines())    
-        for line in diff:
-            if line.startswith('-') or line.startswith('+'):
-                if "hash" in line:
-                    pos = line.find(":")
-                    hash = line[pos+3:-4]
-                    print(hash)
+def getSetCommon(setA, setB):
+    return set(setA) & set(setB)
+
+def getSetDifference(setA, setB):
+    uniq = []
+    uniq.append(set(setA) - set(setB))
+    uniq.append(set(setB) - set(setA))
+    return uniq
+
+def compareStateJsonFiles(fileA, fileB, outpuname, duplicate):
+    with open(fileA,'r') as fa, open(fileB,'r') as fb:
+        jsonA = json.load(fa)
+        jsonB = json.load(fb)
+        print(len(jsonA))
+        print(len(jsonB))
+        jsonAhashes = list(map(lambda x: x["hash"], jsonA))
+        jsonBhashes = list(map(lambda x: x["hash"], jsonB))
+        unique = getSetDifference(jsonAhashes, jsonBhashes)
+        uniqueAJsons = list(filter(lambda x: x["hash"] in unique[0], jsonA))
+        uniqueBJsons = list(filter(lambda x: x["hash"] in unique[1], jsonB))
+        print(len(uniqueAJsons))
+        print(len(uniqueBJsons))
+        saveJsonToFile(uniqueAJsons, fileA[:-5]+"_unique.json")
+        saveJsonToFile(uniqueBJsons, fileB[:-5]+"_unique.json")
+        if duplicate:
+            common = getSetCommon(jsonAhashes, jsonBhashes)
+            commonJsons = list(filter(lambda x: x["hash"] in common, jsonA))
+            print(len(commonJsons))
+            saveJsonToFile(commonJsons, fileA[:-5]+"_duplicates.json")
 
 def main(argv):
     inputFileName = []
@@ -72,36 +96,39 @@ def main(argv):
     outputFileName = []
     outputFileName.append('torrents.json')
     
+    duplicate = False
     parseMode = True
     compareMode = False
     try:
-        opts, args = getopt.getopt(argv,"hi:o:c",["ifile=","ofile=","comparemode"])
-        print(args)
+        opts, args = getopt.getopt(argv,"hi:o:cd",["help","ifile=","ofile=","comparemode","duplicate"])
     except getopt.GetoptError:
-        print 'test.py -i <inputfile> -o <outputfile> -c (comparemode)'
+        print('test.py -h for more info')
         sys.exit(2)
     for opt, arg in opts:
-        if opt == '-h':
-            print 'test.py -i <inputfile> -o <outputfile>'
+        if opt == '-h' or opt == '--help':
+            print( '-i <inputfile>, --ifile <inputfile> (torrents.state file for normal use - when compare mode is active specify 2 -i <inputfile> for JSONs to compare)')
+            print('-o <outputfile>, --ofile <outputfilename> (filename that JSON data i saved to)')
+            print( '-c, --comparemode (Compares 2 JSONS files and difference result is saved into new file. Use -d, --duplicate if you want to also save file with duplicates)')
             sys.exit()
         elif opt in ("-i", "--ifile"):
             inputFileName.append(arg)
         elif opt in ("-o", "--ofile"):
             outputFileName.append(arg)
-        elif opt in ("-c", "--comparemode"):
+        elif opt in ("-c", "--comparemode"): 
             compareMode = True
             parseMode = False
+        elif opt in ("-d", "--duplicate"):
+            duplicate = True
 
     if parseMode:
         torrents = parseTorrentStateFile(inputFileName[1] if len(inputFileName) > 1 else inputFileName[0])
         saveTorrentDataToJson(torrents, outputFileName[1] if len(outputFileName) > 1 else outputFileName[0])
     
     if compareMode:
-        print(len(inputFileName))
         if len(inputFileName) < 3:
             print("Filenames missing. Use two -i to define json files")
             sys.exit(2)
-        compareStateJsonFiles(inputFileName[1], inputFileName[2])
+        compareStateJsonFiles(inputFileName[1], inputFileName[2], outputFileName[1] if len(outputFileName) > 1 else outputFileName[0], duplicate)
 
 if __name__ == "__main__":
    main(sys.argv[1:])
