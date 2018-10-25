@@ -27,7 +27,7 @@ def saveTorrentDataToJson(torrentData, outputFile):
         jsonTorrentsList.append(torrent.toJSON())
     saveListAsJson(jsonTorrentsList, outputFile)
 
-def parseTorrentStateFile(inputFileName):
+def parseTorrentStateFile(inputFileName, saveUrl):
     with open(inputFileName) as stateFile:  
         line = stateFile.readline()
         torrents = []
@@ -45,8 +45,8 @@ def parseTorrentStateFile(inputFileName):
                 path = False
 
 
-            if "http" in line.strip():
-                torrentData.url = line[2:-2] + " - "
+            if "http" in line.strip() and saveUrl:
+                torrentData.url = line[2:-2]
             if line.strip() == "asg18":
                 name = True
             if line.strip() == "sg25":
@@ -54,7 +54,7 @@ def parseTorrentStateFile(inputFileName):
             if line.strip() == "sg21":
                 path = True
 
-            if torrentData.url != "" and torrentData.name != "" and torrentData.path != "" and torrentData.hash != "":
+            if (torrentData.url != "" or not saveUrl) and torrentData.name != "" and torrentData.path != "" and torrentData.hash != "":
                 torrents.append(torrentData)
                 torrentData = TorrentData()
             line = stateFile.readline()
@@ -96,11 +96,12 @@ def main(argv):
     outputFileName = []
     outputFileName.append('torrents.json')
     
+    saveUrl = False
     duplicate = False
     parseMode = True
     compareMode = False
     try:
-        opts, args = getopt.getopt(argv,"hi:o:cd",["help","ifile=","ofile=","comparemode","duplicate"])
+        opts, args = getopt.getopt(argv,"hi:o:cdu",["help","ifile=","ofile=","comparemode","duplicate","url"])
     except getopt.GetoptError:
         print('test.py -h for more info')
         sys.exit(2)
@@ -119,9 +120,11 @@ def main(argv):
             parseMode = False
         elif opt in ("-d", "--duplicate"):
             duplicate = True
+        elif opt in ("-u" "--url"):
+            saveUrl = True
 
     if parseMode:
-        torrents = parseTorrentStateFile(inputFileName[1] if len(inputFileName) > 1 else inputFileName[0])
+        torrents = parseTorrentStateFile(inputFileName[1] if len(inputFileName) > 1 else inputFileName[0], saveUrl)
         saveTorrentDataToJson(torrents, outputFileName[1] if len(outputFileName) > 1 else outputFileName[0])
     
     if compareMode:
