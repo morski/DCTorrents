@@ -103,6 +103,8 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+#Visual Studio Code
+.vscode
 # Generated file
-*.json
+output/*.json
 *.state
