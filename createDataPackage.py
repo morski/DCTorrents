@@ -13,7 +13,7 @@ def copyTorrentFilesToLocalDirectory(torrentHashes, src, dest):
         print(os.path.isfile(full_file_name))
         print(full_file_name[-8:] == ".torrent")
         print(any(full_file_name[:-8] in s for s in torrentHashes))
-        if (os.path.isfile(full_file_name) and full_file_name[-8:] == ".torrent" and any(full_file_name[:-8] in s for s in torrentHashes)):
+        if (os.path.isfile(full_file_name) and file_name[-8:] == ".torrent" and any(file_name[:-8] in s for s in torrentHashes)):
             shutil.copy(full_file_name, dest)
 
 def main():
