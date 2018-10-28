@@ -6,7 +6,7 @@ import saveTorrentDataToJson
 
 def copyTorrentFilesToLocalDirectory(torrentHashes, src, dest):
     src_files = os.listdir(src)
-    print("Filed found in " + src +": " + len(src_files))
+    print("Filed found in " + src +": " + str(len(src_files)))
     for file_name in src_files:
         full_file_name = os.path.join(src, file_name)
         print(full_file_name)
