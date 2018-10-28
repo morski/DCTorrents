@@ -108,3 +108,4 @@ venv.bak/
 # Generated file
 output/*.json
 *.state
+announce.txt

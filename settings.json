@@ -1,0 +1,9 @@
+{
+    "torrentsStateFolderPath": "",
+    "torrentsStateFileName": "torrents.state",
+    "torrentsStateParsedFileName": "torrents.state.json",
+    "addAnnounceUrlToOutputFile": false,
+    "announceUrlFileName": "announce.json",
+    "torrentCopyDirectory": "torrents",
+    "outputFolder": "output/"
+}

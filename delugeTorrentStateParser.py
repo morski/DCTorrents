@@ -1,101 +1,25 @@
 import json
 import sys, getopt
 import difflib
-
-class TorrentData(object):
-    def toJSON(self):
-        return json.dumps(self, default=lambda o: o.__dict__, 
-            sort_keys=True, indent=4)
-    name = ""
-    hash = ""
-    path = ""
-    url = ""
-
-def getUniqueUrls(torrentData):
-    urls = set(list(map(lambda x: x.url, torrentData)))
-    with open("announce.txt", 'w') as outfile:
-        outfile.write(";".join(urls))
-
-def saveJsonToFile(jsonData, outputfile):
-    with open(outputfile, 'w') as outfile:
-        json.dump(jsonData, outfile)
-
-def saveListAsJson(data, outputfile):
-    with open(outputfile, 'w') as outfile:
-        outfile.write("[\n")
-        outfile.write(",".join(data))
-        outfile.write("]\n")
-
-def saveTorrentDataToJson(torrentData, outputFile):
-    jsonTorrentsList = []
-    for torrent in torrentData:
-        jsonTorrentsList.append(torrent.toJSON())
-    saveListAsJson(jsonTorrentsList, outputFile)
-
-def parseTorrentStateFile(inputFileName, saveUrl):
-    with open(inputFileName) as stateFile:  
-        line = stateFile.readline()
-        torrents = []
-        hash, name, path = False, False, False
-        torrentData = TorrentData()
-        while line:
-            if hash:
-                torrentData.hash = line[2:-2]
-                hash = False
-            if name:
-                torrentData.name = line[2:-2]
-                name = False
-            if path:
-                torrentData.path = line[2:-2]
-                path = False
+from .parseTorrentsStateFile import parse
+from .compareStateJsonFiles import compare
+from .getUrlsFromJson import getUniqueUrls
+from .saveTorrentDataToJson import save
 
 
-            if "http" in line.strip() and saveUrl:
-                torrentData.url = line[2:-2]
-            if line.strip() == "asg18":
-                name = True
-            if line.strip() == "sg25":
-                hash = True
-            if line.strip() == "sg21":
-                path = True
 
-            if (torrentData.url != "" or not saveUrl) and torrentData.name != "" and torrentData.path != "" and torrentData.hash != "":
-                torrents.append(torrentData)
-                torrentData = TorrentData()
-            line = stateFile.readline()
-        return torrents
 
-def getSetCommon(setA, setB):
-    return set(setA) & set(setB)
 
-def getSetDifference(setA, setB):
-    uniq = []
-    uniq.append(set(setA) - set(setB))
-    uniq.append(set(setB) - set(setA))
-    return uniq
 
-def compareStateJsonFiles(fileA, fileB, outpuname, duplicate):
-    with open(fileA,'r') as fa, open(fileB,'r') as fb:
-        jsonA = json.load(fa)
-        jsonB = json.load(fb)
-        print(len(jsonA))
-        print(len(jsonB))
-        jsonAhashes = list(map(lambda x: x["hash"], jsonA))
-        jsonBhashes = list(map(lambda x: x["hash"], jsonB))
-        unique = getSetDifference(jsonAhashes, jsonBhashes)
-        uniqueAJsons = list(filter(lambda x: x["hash"] in unique[0], jsonA))
-        uniqueBJsons = list(filter(lambda x: x["hash"] in unique[1], jsonB))
-        print(len(uniqueAJsons))
-        print(len(uniqueBJsons))
-        saveJsonToFile(uniqueAJsons, fileA[:-5]+"_unique.json")
-        saveJsonToFile(uniqueBJsons, fileB[:-5]+"_unique.json")
-        if duplicate:
-            common = getSetCommon(jsonAhashes, jsonBhashes)
-            commonJsons = list(filter(lambda x: x["hash"] in common, jsonA))
-            print(len(commonJsons))
-            saveJsonToFile(commonJsons, fileA[:-5]+"_duplicates.json")
+
+
 
 def main(argv):
+    with open("settings.json",'r') as settingsJson:
+        settings = json.load(settingsJson)
+
+
+
     inputFileName = []
     inputFileName.append('torrents.state')
     outputFileName = []
@@ -135,17 +59,17 @@ def main(argv):
             parseMode = False
 
     if parseMode:
-        torrents = parseTorrentStateFile(inputFileName[1] if len(inputFileName) > 1 else inputFileName[0], saveUrl)
-        saveTorrentDataToJson(torrents, outputFileName[1] if len(outputFileName) > 1 else outputFileName[0])
+        torrents = parse(inputFileName[1] if len(inputFileName) > 1 else inputFileName[0], saveUrl)
+        save(torrents, outputFileName[1] if len(outputFileName) > 1 else outputFileName[0])
     
     if compareMode:
         if len(inputFileName) < 3:
             print("Filenames missing. Use two -i to define json files")
             sys.exit(2)
-        compareStateJsonFiles(inputFileName[1], inputFileName[2], outputFileName[1] if len(outputFileName) > 1 else outputFileName[0], duplicate)
+        compare(inputFileName[1], inputFileName[2], outputFileName[1] if len(outputFileName) > 1 else outputFileName[0], duplicate)
 
     if announceMode:
-        torrents = parseTorrentStateFile(inputFileName[1] if len(inputFileName) > 1 else inputFileName[0], True)
+        torrents = parse(inputFileName[1] if len(inputFileName) > 1 else inputFileName[0], True)
         getUniqueUrls(torrents)
 
 if __name__ == "__main__":
