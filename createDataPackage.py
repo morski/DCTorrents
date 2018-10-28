@@ -18,7 +18,9 @@ def main():
         torrents = parseTorrentsStateFile.parse(settings["torrentsStateFolderPath"] + settings["torrentsStateFileName"], settings["addAnnounceUrlToOutputFile"])
         saveTorrentDataToJson.save(torrents, settings["outputFolder"] + settings["torrentsStateParsedFileName"])
 
-        copyTorrentFilesToLocalDirectory(list(map(lambda x: x.hash, torrents)), settings["torrentsStateFolderPath"], settings["outputFolder"])
+        hashList = list(map(lambda x: x.hash, torrents))
+        print(hashList)
+        copyTorrentFilesToLocalDirectory(hashList, settings["torrentsStateFolderPath"], settings["outputFolder"])
 
 
 
