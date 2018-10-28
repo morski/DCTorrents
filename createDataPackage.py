@@ -6,8 +6,13 @@ import saveTorrentDataToJson
 
 def copyTorrentFilesToLocalDirectory(torrentHashes, src, dest):
     src_files = os.listdir(src)
+    print("Filed found in " + src +": " + len(src_files))
     for file_name in src_files:
         full_file_name = os.path.join(src, file_name)
+        print(full_file_name)
+        print(os.path.isfile(full_file_name))
+        print(full_file_name[-8:] == ".torrent")
+        print(any(full_file_name[:-8] in s for s in torrentHashes))
         if (os.path.isfile(full_file_name) and full_file_name[-8:] == ".torrent" and any(full_file_name[:-8] in s for s in torrentHashes)):
             shutil.copy(full_file_name, dest)
 
